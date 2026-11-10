@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import indonesiaRegencies from "./indonesia-regencies.json";
+import StandaloneCanonicalPanel from './canonical/StandaloneCanonicalPanel';
 
 const Icon = ({ name, className = "h-5 w-5" }) => {
   const common = {
@@ -1535,7 +1536,10 @@ export default function App() {
   }
 
   if (!currentUser) {
-    return <AuthScreen users={users} setUsers={setUsers} setCurrentUser={setCurrentUser} />;
+    return <>
+      {import.meta.env.VITE_QP1_ISOLATED_PAYROLL_READ === 'true' && <StandaloneCanonicalPanel />}
+      <AuthScreen users={users} setUsers={setUsers} setCurrentUser={setCurrentUser} />
+    </>;
   }
 
   return (
@@ -1546,6 +1550,7 @@ export default function App() {
         <main className="min-w-0 flex-1">
           <Header activeLabel={activeLabel} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} currentUser={currentUser} onLogout={logout} />
           <div className="p-4 lg:p-8">
+            {import.meta.env.VITE_QP1_ISOLATED_PAYROLL_READ === 'true' && <StandaloneCanonicalPanel />}
             {activeTab === "dashboard" && <Dashboard employees={employees} attendance={attendance} externalWorkers={externalWorkers} minimumWages={minimumWages} payrollRows={payrollRows} auditLogs={auditLogs} currentUser={currentUser} />}
             {activeTab === "employees" && <Employees employees={employees} setEmployees={setEmployees} minimumWages={minimumWages} />}
             {activeTab === "externalWorkers" && <ExternalWorkers externalWorkers={externalWorkers} setExternalWorkers={setExternalWorkers} />}

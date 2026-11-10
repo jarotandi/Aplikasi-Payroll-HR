@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { createCanonicalPayrollReader } from '@niaga/payroll-core';
 
 /**
  * Staging-only. The legacy Standalone app uses localStorage demo state;
@@ -45,25 +46,19 @@ export async function readLocalCanonicalPayroll(client, organizationId) {
     p_permission_code:'people.manage',
   });
   if (permission.error || permission.data !== true) throw new Error('Access denied');
-  const tables=['employees','payroll_runs','payroll_items'];
-  const values=await Promise.all(tables.map((table)=> {
-    if (table === 'payroll_items') {
-      // Physical items have no organization_id. Filter through parent run.
-      return client.from(table).select('id,payroll_run_id,payroll_runs!inner(organization_id)')
-        .eq('payroll_runs.organization_id',organizationId);
-    }
-    return client.from(table).select('id,organization_id').eq('organization_id',organizationId);
-  }));
-  if(values.some((result)=>result.error || !Array.isArray(result.data)))
-    throw new Error('Canonical payroll read unavailable');
-  const normalized=values.map((result,i)=>result.data.map((row)=>{
-    if(tables[i]!=='payroll_items') return row;
-    const parent=row.payroll_runs;
-    if(!parent || Array.isArray(parent) || typeof parent.organization_id!=='string')
-      throw new Error('Canonical tenant boundary violation');
-    return {...row,organization_id:parent.organization_id};
-  }));
-  if(normalized.some((rows)=>rows.some((row)=>row.organization_id!==organizationId)))
-    throw new Error('Canonical tenant boundary violation');
-  return Object.fromEntries(tables.map((table,i)=>[table,normalized[i]]));
+  // Consume the exact compiled shared Payroll Core contract from Niaga ERP.
+  // User-scoped Supabase session and database RLS remain authoritative;
+  // the grant is based only on server RPC and a verified Auth session.
+  const reader = createCanonicalPayrollReader(client, {
+    authenticated: true,
+    workspaceReady: true,
+    organizationId,
+    peopleManage: true,
+  });
+  const [employees, payrollRuns, payrollItems] = await Promise.all([
+    reader.employees(organizationId),
+    reader.payrollRuns(organizationId),
+    reader.payrollItems(organizationId),
+  ]);
+  return { employees, payroll_runs: payrollRuns, payroll_items: payrollItems };
 }

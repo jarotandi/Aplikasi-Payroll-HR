@@ -1,3 +1,4 @@
+import { assertProductionPayrollExecutable, createCanonicalPayrollReader } from '@niaga/payroll-core';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { isLocalCanonicalConfig,isPublicSupabaseKey,createLocalCanonicalClient,readLocalCanonicalPayroll } from './isolatedCanonicalRead.js';
@@ -74,4 +75,8 @@ test('denies malformed or missing organization before requesting user data',asyn
   const f=fixture();
   await assert.rejects(readLocalCanonicalPayroll(f.client,'wrong-id'),/organization unavailable/);
   assert.equal(f.reads.length,0);
+});
+test('consumes one compiled Payroll Core source with fail-closed financial authority', () => {
+  assert.equal(typeof createCanonicalPayrollReader, 'function');
+  assert.throws(() => assertProductionPayrollExecutable(), /HOLD/);
 });

@@ -9,7 +9,7 @@
     "preview": "vite preview --host 127.0.0.1"
   },
   "dependencies": {
-    "@niaga/payroll-core": "file:vendor/niaga-payroll-core-0.1.0-staging.5.tgz",
+    "@niaga/payroll-core": "file:vendor/niaga-payroll-core-0.1.0-staging.6.tgz",
     "@supabase/supabase-js": "2.119.0",
     "@vitejs/plugin-react": "^5.0.4",
     "autoprefixer": "^10.4.21",

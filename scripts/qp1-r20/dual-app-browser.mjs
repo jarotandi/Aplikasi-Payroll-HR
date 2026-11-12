@@ -23,14 +23,16 @@ async function main(){
   await standalone.goto('http://127.0.0.1:56921/',{waitUntil:'domcontentloaded',timeout:25000});
   const panel=standalone.locator('[data-testid="r20-standalone-bridge"]');
   await panel.waitFor({state:'visible',timeout:15000});
-  assert.ok((await standalone.locator('body').innerText()).includes('PayRollix')||
-            (await standalone.locator('body').innerText()).includes('Payroll'));
+  assert.equal((await standalone.locator('body').innerText()).includes('admin@payroll.local'),false,'demo credentials must be hidden in canonical mode');
   await panel.getByLabel('Email Supabase staging').fill(m[1]);
   await panel.getByLabel('Password Supabase staging').fill(m[2]);
   await panel.getByRole('button',{name:'Masuk kanonis'}).click();
   const org=await panel.locator('[data-testid="r20-current-org"]').innerText({timeout:15000});
   assert.match(org,/^[0-9a-f-]{36}$/);
   await panel.locator('[data-testid="r20-canonical-counts"]').waitFor({state:'visible'});
+  await panel.locator('[data-testid="r20-canonical-records"]').waitFor({state:'visible'});
+  assert.ok((await panel.innerText()).includes('Payroll Runs · baca-saja'));
+  assert.ok((await panel.innerText()).includes('Payroll Items · baca-saja'));
   await panel.screenshot({path:'F:/Niaga-QP1-R20-STANDALONE-20261112/docs/qp1-r20/r20-standalone-auth.png'});
   await panel.getByLabel('Kode karyawan kanonis').fill(employeeCode);
   await panel.getByLabel('Nama karyawan kanonis').fill('R20 Browser Synthetic');

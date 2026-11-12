@@ -87,15 +87,31 @@ export async function resolveCanonicalSession(client) {
 export async function readCanonicalSessionPayroll(client) {
   const ctx=await resolveCanonicalSession(client);
   const rows=await readLocalCanonicalPayroll(client,ctx.organizationId);
-  // Shared Payroll Core verifies ID/tenant; details come from the SAME table.
-  const {data:detail,error}=await client.from('employees')
-    .select('id,organization_id,employee_code,full_name,employment_status')
-    .eq('organization_id',ctx.organizationId);
-  if(error||!Array.isArray(detail))throw Error('Canonical employee detail unavailable');
-  if(detail.some(r=>r.organization_id!==ctx.organizationId)||
-    detail.map(r=>r.id).sort().join(',')!==rows.employees.map(r=>r.id).sort().join(','))
-    throw Error('Canonical employee detail parity HOLD');
-  return {...rows,employees:detail,context:ctx};
+  // Same underlying tables, with ID parity against the shared Payroll Core.
+  const [employees,runs,items]=await Promise.all([
+    client.from('employees').select('id,organization_id,employee_code,full_name,employment_status')
+      .eq('organization_id',ctx.organizationId),
+    client.from('payroll_runs').select('id,organization_id,period_start,period_end,status')
+      .eq('organization_id',ctx.organizationId),
+    client.from('payroll_items')
+      .select('id,payroll_run_id,employee_id,gross_amount,deduction_amount,net_amount,payroll_runs!inner(organization_id)')
+      .eq('payroll_runs.organization_id',ctx.organizationId),
+  ]);
+  for(const [name,result,baseline] of [
+    ['employee',employees,rows.employees],
+    ['payroll run',runs,rows.payroll_runs],
+    ['payroll item',items,rows.payroll_items],
+  ]){
+    if(result.error||!Array.isArray(result.data))throw Error('Canonical '+name+' detail unavailable');
+    if(result.data.map(r=>r.id).sort().join(',')!==baseline.map(r=>r.id).sort().join(','))
+      throw Error('Canonical '+name+' ID parity HOLD');
+  }
+  if(employees.data.some(r=>r.organization_id!==ctx.organizationId)||
+     runs.data.some(r=>r.organization_id!==ctx.organizationId)||
+     items.data.some(r=>r.payroll_runs?.organization_id!==ctx.organizationId))
+    throw Error('Canonical cross-tenant detail refused');
+  return {...rows,employees:employees.data,payroll_runs:runs.data,
+    payroll_items:items.data,context:ctx};
 }
 const stringField=(value,label,max)=>{
   if(typeof value!=='string'||value.trim().length<2||value.trim().length>max||

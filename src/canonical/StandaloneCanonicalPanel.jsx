@@ -86,6 +86,35 @@ export default function StandaloneCanonicalPanel(){
        ].map(([label,n])=><div key={label} className="bg-slate-50 rounded p-3">
         <p className="text-xs text-slate-500">{label}</p><strong>{n}</strong></div>)}
       </div>}
+      {snapshot&&<div className="grid grid-cols-1 lg:grid-cols-2 gap-3" data-testid="r20-canonical-records">
+       <div className="rounded-lg border p-3">
+        <h3 className="font-bold text-sm mb-2">Karyawan kanonis</h3>
+        <div className="max-h-52 overflow-auto text-sm">
+         {snapshot.employees.slice(0,50).map(row=><div key={row.id} className="border-b p-2">
+          <b>{row.employee_code}</b> · {row.full_name}
+         </div>)}
+        </div>
+       </div>
+       <div className="rounded-lg border p-3">
+        <h3 className="font-bold text-sm mb-2">Payroll Runs · baca-saja</h3>
+        <div className="max-h-52 overflow-auto text-sm">
+         {snapshot.payroll_runs.slice(0,50).map(row=><div key={row.id} className="border-b p-2">
+          <b>{row.period_start}</b> – {row.period_end} · {row.status}
+         </div>)}
+        </div>
+       </div>
+       <div className="rounded-lg border p-3 lg:col-span-2">
+        <h3 className="font-bold text-sm mb-2">Payroll Items · baca-saja (Finance HOLD)</h3>
+        <div className="max-h-52 overflow-auto text-sm">
+         {snapshot.payroll_items.slice(0,50).map(row=><div key={row.id} className="border-b p-2 flex flex-wrap gap-3">
+          <span>{row.id.slice(0,8)}</span>
+          <span>Bruto Rp {Number(row.gross_amount).toLocaleString('id-ID')}</span>
+          <span>Potongan Rp {Number(row.deduction_amount).toLocaleString('id-ID')}</span>
+          <b>Netto Rp {Number(row.net_amount).toLocaleString('id-ID')}</b>
+         </div>)}
+        </div>
+       </div>
+      </div>}
       <form className="flex flex-wrap items-end gap-2 border-t pt-3" onSubmit={e=>{
        e.preventDefault();void action(async()=>{
         const response=await createCanonicalEmployeeR20(client,{employee_code:code,full_name:name});

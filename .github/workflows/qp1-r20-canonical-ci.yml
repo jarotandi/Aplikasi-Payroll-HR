@@ -1,0 +1,38 @@
+name: QP1 R20 Standalone Canonical Bridge CI
+
+on:
+  push:
+    branches:
+      - feat/qp1-r20-canonical-bridge-standalone-20261112
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  isolated-bridge-acceptance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install pinned lockfile dependencies
+        run: npm ci
+      - name: Unit acceptance - local-only Auth and tenant gate
+        run: node --test scripts/qp1-r20/canonical-bridge.unit.mjs
+      - name: Legacy cutover fail-closed regression
+        run: node --test scripts/qp1-r10/evaluate-cutover-manifest.test.mjs
+      - name: Build isolated canonical mode (no production API keys)
+        env:
+          VITE_QP1_ISOLATED_PAYROLL_READ: 'true'
+        run: npm run build
+      - name: Build legacy standalone mode unchanged
+        env:
+          VITE_QP1_ISOLATED_PAYROLL_READ: 'false'
+        run: npm run build

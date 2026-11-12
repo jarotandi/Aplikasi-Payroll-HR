@@ -1,0 +1,36 @@
+name: QP1 R21 HR Operational Staging CI
+
+on:
+  push:
+    branches:
+      - feat/qp1-r21-standalone-hr-operational-staging-20261112
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  r21-safe-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Lockfile install
+        run: npm ci
+      - name: R21 denial and prior R20/R10 regression tests
+        run: node --test scripts/qp1-r21/operational.unit.mjs scripts/qp1-r20/canonical-bridge.unit.mjs scripts/qp1-r10/evaluate-cutover-manifest.test.mjs
+      - name: Build canonical staging UI only
+        env:
+          VITE_QP1_ISOLATED_PAYROLL_READ: 'true'
+        run: npm run build
+      - name: Build preserved legacy UI without deployment
+        env:
+          VITE_QP1_ISOLATED_PAYROLL_READ: 'false'
+        run: npm run build

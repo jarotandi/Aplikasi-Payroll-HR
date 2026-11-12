@@ -1,4 +1,5 @@
 import {useMemo,useState} from 'react';
+import CanonicalOperationalR21 from './CanonicalOperationalR21';
 import {
  createLocalCanonicalClient,isLocalCanonicalConfig,readCanonicalSessionPayroll,
  resolveCanonicalSession,createCanonicalEmployeeR20,updateCanonicalEmployeeR20,
@@ -86,6 +87,7 @@ export default function StandaloneCanonicalPanel(){
        ].map(([label,n])=><div key={label} className="bg-slate-50 rounded p-3">
         <p className="text-xs text-slate-500">{label}</p><strong>{n}</strong></div>)}
       </div>}
+      {snapshot&&<CanonicalOperationalR21 client={client} organizationId={session.organizationId} employees={snapshot.employees}/>}
       {snapshot&&<div className="grid grid-cols-1 lg:grid-cols-2 gap-3" data-testid="r20-canonical-records">
        <div className="rounded-lg border p-3">
         <h3 className="font-bold text-sm mb-2">Karyawan kanonis</h3>
